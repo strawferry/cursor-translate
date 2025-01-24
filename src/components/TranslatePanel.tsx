@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { detectLanguage } from '@/services/translate';
 import { speechService } from '@/services/speech';
-import { Volume, StopCircle } from 'lucide-react';
+import { Volume, StopCircle, Copy, Check } from 'lucide-react';
 import { historyService } from '@/services/history';
 import { TranslationHistory as HistoryType } from '@/types';
 import { TranslationHistory } from './TranslationHistory';
@@ -27,6 +27,7 @@ export default function TranslatePanel() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [history, setHistory] = useState<HistoryType[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
 
   useEffect(() => {
     if (historyService) {
@@ -100,20 +101,43 @@ export default function TranslatePanel() {
     }
   }, [isPlaying]);
 
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(text);
+      setTimeout(() => setCopiedText(null), 2000); // 2秒后重置复制状态
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
   const renderText = (text: string, lang: 'en' | 'zh', className: string = '') => (
     <div className={`relative group ${className}`}>
-      <p className="pr-10">{text}</p>
-      <button
-        onClick={() => handleSpeak(text, lang)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-        title={isPlaying ? '停止播放' : '播放'}
-      >
-        {isPlaying ? (
-          <StopCircle className="w-5 h-5" />
-        ) : (
-          <Volume className="w-5 h-5" />
-        )}
-      </button>
+      <p className="pr-20">{text}</p>
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+        <button
+          onClick={() => handleCopy(text)}
+          className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+          title="复制文本"
+        >
+          {copiedText === text ? (
+            <Check className="w-4 h-4 text-green-500" />
+          ) : (
+            <Copy className="w-4 h-4 text-gray-500" />
+          )}
+        </button>
+        <button
+          onClick={() => handleSpeak(text, lang)}
+          className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+          title={isPlaying ? '停止播放' : '播放'}
+        >
+          {isPlaying ? (
+            <StopCircle className="w-4 h-4 text-gray-500" />
+          ) : (
+            <Volume className="w-4 h-4 text-gray-500" />
+          )}
+        </button>
+      </div>
     </div>
   );
 

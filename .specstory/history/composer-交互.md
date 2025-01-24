@@ -2527,6 +2527,18 @@ export default function TranslatePanel() {
 
 ---
 
+_**User**_
+
+我想在翻译后的内容添加一个直接复制按钮
+
+---
+
+_**Assistant**_
+
+
+
+---
+
 
 
 ---

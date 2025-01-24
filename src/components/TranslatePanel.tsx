@@ -3,10 +3,13 @@
 import { useState, ChangeEvent } from 'react';
 import { TextArea } from './ui/TextArea';
 import { Button } from './ui/Button';
+import { detectLanguage } from '@/services/translate';
 
 interface TranslationResult {
   text: string;
   paragraphs?: string[];
+  sourceLang?: 'en' | 'zh';
+  targetLang?: 'en' | 'zh';
 }
 
 export default function TranslatePanel() {
@@ -14,9 +17,18 @@ export default function TranslatePanel() {
   const [translatedText, setTranslatedText] = useState<TranslationResult | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [displayMode, setDisplayMode] = useState<'full' | 'parallel'>('full');
+  const [detectedLang, setDetectedLang] = useState<'en' | 'zh' | null>(null);
 
   const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setSourceText(e.target.value);
+    const newText = e.target.value;
+    setSourceText(newText);
+    
+    if (newText.trim()) {
+      const lang = detectLanguage(newText);
+      setDetectedLang(lang);
+    } else {
+      setDetectedLang(null);
+    }
   };
 
   const splitIntoParagraphs = (text: string): string[] => {
@@ -78,19 +90,26 @@ export default function TranslatePanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 mb-4">
-        <Button
-          onClick={() => setDisplayMode('full')}
-          variant={displayMode === 'full' ? 'default' : 'outline'}
-        >
-          整体显示
-        </Button>
-        <Button
-          onClick={() => setDisplayMode('parallel')}
-          variant={displayMode === 'parallel' ? 'default' : 'outline'}
-        >
-          对照显示
-        </Button>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-4">
+          <Button
+            onClick={() => setDisplayMode('full')}
+            variant={displayMode === 'full' ? 'default' : 'outline'}
+          >
+            整体显示
+          </Button>
+          <Button
+            onClick={() => setDisplayMode('parallel')}
+            variant={displayMode === 'parallel' ? 'default' : 'outline'}
+          >
+            对照显示
+          </Button>
+        </div>
+        {detectedLang && (
+          <div className="text-sm text-gray-500">
+            {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+          </div>
+        )}
       </div>
 
       <TextArea

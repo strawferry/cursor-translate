@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server';
+import { translateText, detectLanguage } from '@/services/translate';
 
 export async function POST(request: Request) {
   try {
     const { text } = await request.json();
+    
+    if (!text?.trim()) {
+      return NextResponse.json(
+        { error: 'Text is required' },
+        { status: 400 }
+      );
+    }
 
-    // TODO: 实现 DeepSeek API 调用
-    // 这里先模拟翻译结果，之后会替换为真实的 API 调用
-    const translatedText = text.split('\n').map(line => {
-      if (line.trim()) {
-        return `Translated: ${line.trim()}`;
-      }
-      return '';
-    }).join('\n');
+    const sourceLang = detectLanguage(text);
+    const targetLang = sourceLang === 'en' ? 'zh' : 'en';
+
+    const translatedText = await translateText({
+      text,
+      sourceLang,
+      targetLang,
+    });
 
     return NextResponse.json({ translatedText });
   } catch (error) {

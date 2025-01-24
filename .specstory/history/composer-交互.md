@@ -926,6 +926,554 @@ npm install lucide-react
 
 ---
 
+_**User**_
+
+添加历史记录功能,并在前端本地使用 localstorege 保存最近 50 条记录
+
+---
+
+_**Assistant**_
+
+好的,让我们添加历史记录功能。首先创建一个历史记录服务和相关类型定义:
+
+1. 创建类型定义文件:
+
+```typescript:src/types/index.ts
+export interface TranslationHistory {
+  id: string;
+  sourceText: string;
+  translatedText: string;
+  sourceLang: 'en' | 'zh';
+  targetLang: 'en' | 'zh';
+  timestamp: number;
+  isFavorite?: boolean;
+}
+```
+
+2. 创建历史记录服务:
+
+```typescript:src/services/history.ts
+import { TranslationHistory } from '@/types';
+
+const HISTORY_KEY = 'translation_history';
+const MAX_HISTORY = 50;
+
+export class HistoryService {
+  private history: TranslationHistory[] = [];
+
+  constructor() {
+    this.loadHistory();
+  }
+
+  private loadHistory() {
+    if (typeof window === 'undefined') return;
+    
+    const saved = localStorage.getItem(HISTORY_KEY);
+    if (saved) {
+      try {
+        this.history = JSON.parse(saved);
+      } catch (error) {
+        console.error('Failed to load history:', error);
+        this.history = [];
+      }
+    }
+  }
+
+  private saveHistory() {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(this.history));
+  }
+
+  addTranslation(translation: Omit<TranslationHistory, 'id' | 'timestamp'>) {
+    const newEntry: TranslationHistory = {
+      ...translation,
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      isFavorite: false
+    };
+
+    this.history.unshift(newEntry);
+    
+    // 保持最大历史记录数
+    if (this.history.length > MAX_HISTORY) {
+      this.history = this.history.slice(0, MAX_HISTORY);
+    }
+
+    this.saveHistory();
+    return newEntry;
+  }
+
+  getHistory(): TranslationHistory[] {
+    return this.history;
+  }
+
+  toggleFavorite(id: string) {
+    const entry = this.history.find(h => h.id === id);
+    if (entry) {
+      entry.isFavorite = !entry.isFavorite;
+      this.saveHistory();
+    }
+  }
+
+  deleteEntry(id: string) {
+    this.history = this.history.filter(h => h.id !== id);
+    this.saveHistory();
+  }
+
+  clearHistory() {
+    this.history = [];
+    this.saveHistory();
+  }
+}
+
+export const historyService = typeof window !== 'undefined' ? new HistoryService() : null;
+```
+
+3. 创建历史记录组件:
+
+```typescript:src/components/TranslationHistory.tsx
+import { useState } from 'react';
+import { TranslationHistory } from '@/types';
+import { Button } from './ui/Button';
+import { Star, Trash2, Clock } from 'lucide-react';
+
+interface TranslationHistoryProps {
+  history: TranslationHistory[];
+  onSelect: (entry: TranslationHistory) => void;
+  onToggleFavorite: (id: string) => void;
+  onDelete: (id: string) => void;
+  onClear: () => void;
+}
+
+export function TranslationHistory({
+  history,
+  onSelect,
+  onToggleFavorite,
+  onDelete,
+  onClear
+}: TranslationHistoryProps) {
+  const [filter, setFilter] = useState<'all' | 'favorites'>('all');
+
+  const filteredHistory = filter === 'all' 
+    ? history 
+    : history.filter(h => h.isFavorite);
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('zh-CN', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            onClick={() => setFilter('all')}
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            全部
+          </Button>
+          <Button
+            variant={filter === 'favorites' ? 'default' : 'outline'}
+            onClick={() => setFilter('favorites')}
+          >
+            <Star className="w-4 h-4 mr-1" />
+            收藏
+          </Button>
+        </div>
+        <Button variant="outline" onClick={onClear}>
+          清空历史
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {filteredHistory.map(entry => (
+          <div
+            key={entry.id}
+            className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex-1" onClick={() => onSelect(entry)}>
+                <p className="line-clamp-2">{entry.sourceText}</p>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <button
+                  onClick={() => onToggleFavorite(entry.id)}
+                  className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                    entry.isFavorite ? 'text-yellow-500' : 'text-gray-400'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onDelete(entry.id)}
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="text-sm text-gray-500">
+              {formatDate(entry.timestamp)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+4. 更新 TranslatePanel 组件以集成历史记录功能:
+
+```typescript:src/components/TranslatePanel.tsx
+// ... 其他导入保持不变
+import { historyService } from '@/services/history';
+import { TranslationHistory as HistoryType } from '@/types';
+import { TranslationHistory } from './TranslationHistory';
+
+export default function TranslatePanel() {
+  // ... 其他 state 保持不变
+  const [history, setHistory] = useState<HistoryType[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // 在组件加载时获取历史记录
+  useEffect(() => {
+    if (historyService) {
+      setHistory(historyService.getHistory());
+    }
+  }, []);
+
+  // 修改 handleTranslate 函数
+  const handleTranslate = async () => {
+    if (!sourceText.trim()) return;
+    
+    setIsTranslating(true);
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: sourceText }),
+      });
+      
+      const data = await response.json();
+      
+      const result = {
+        text: data.translatedText,
+        paragraphs: splitIntoParagraphs(data.translatedText)
+      };
+      
+      setTranslatedText(result);
+
+      // 添加到历史记录
+      if (historyService) {
+        const newEntry = historyService.addTranslation({
+          sourceText,
+          translatedText: data.translatedText,
+          sourceLang: detectedLang || 'en',
+          targetLang: (detectedLang || 'en') === 'en' ? 'zh' : 'en'
+        });
+        setHistory(historyService.getHistory());
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleHistorySelect = (entry: HistoryType) => {
+    setSourceText(entry.sourceText);
+    setTranslatedText({
+      text: entry.translatedText,
+      paragraphs: splitIntoParagraphs(entry.translatedText)
+    });
+    setDetectedLang(entry.sourceLang);
+    setShowHistory(false);
+  };
+
+  const handleToggleFavorite = (id: string) => {
+    if (historyService) {
+      historyService.toggleFavorite(id);
+      setHistory(historyService.getHistory());
+    }
+  };
+
+  const handleDeleteHistory = (id: string) => {
+    if (historyService) {
+      historyService.deleteEntry(id);
+      setHistory(historyService.getHistory());
+    }
+  };
+
+  const handleClearHistory = () => {
+    if (historyService) {
+      historyService.clearHistory();
+      setHistory([]);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-4">
+          {/* ... 现有的按钮保持不变 ... */}
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setShowHistory(!showHistory)}
+        >
+          历史记录
+        </Button>
+      </div>
+
+      {showHistory ? (
+        <TranslationHistory
+          history={history}
+          onSelect={handleHistorySelect}
+          onToggleFavorite={handleToggleFavorite}
+          onDelete={handleDeleteHistory}
+          onClear={handleClearHistory}
+        />
+      ) : (
+        <>
+          {/* ... 现有的翻译界面保持不变 ... */}
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+这些更改添加了以下功能：
+
+1. 本地存储最近50条翻译记录
+2. 支持收藏/取消收藏记录
+3. 可以查看和筛选历史记录
+4. 支持删除单条记录或清空所有记录
+5. 点击历史记录可以快速重新加载翻译
+6. 显示翻译时间
+7. 支持在历史记录和翻译界面之间切换
+
+需要安装额外的依赖：
+
+```bash
+npm install lucide-react
+```
+
+这样就完成了历史记录功能的实现。你想继续完善哪些功能？
+
+---
+
+_**User**_
+
+我想点击历史记录后,可以回显在页面上
+
+---
+
+_**Assistant**_
+
+我注意到历史记录的回显功能已经实现了，但可能需要一些调整来改进用户体验。让我们修改一下 TranslatePanel 和 TranslationHistory 组件：
+
+1. 首先修改 TranslationHistory 组件，让历史记录项更清晰地显示源文本和翻译结果：
+
+```typescript:src/components/TranslationHistory.tsx
+import { useState } from 'react';
+import type { TranslationHistory as HistoryType } from '@/types';
+import { Button } from './ui/Button';
+import { Star, Trash2, Clock } from 'lucide-react';
+
+interface TranslationHistoryProps {
+  history: HistoryType[];
+  onSelect: (entry: HistoryType) => void;
+  onToggleFavorite: (id: string) => void;
+  onDelete: (id: string) => void;
+  onClear: () => void;
+}
+
+export function TranslationHistory({
+  history,
+  onSelect,
+  onToggleFavorite,
+  onDelete,
+  onClear
+}: TranslationHistoryProps) {
+  const [filter, setFilter] = useState<'all' | 'favorites'>('all');
+
+  const filteredHistory = filter === 'all' 
+    ? history 
+    : history.filter(h => h.isFavorite);
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('zh-CN', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            onClick={() => setFilter('all')}
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            全部
+          </Button>
+          <Button
+            variant={filter === 'favorites' ? 'default' : 'outline'}
+            onClick={() => setFilter('favorites')}
+          >
+            <Star className="w-4 h-4 mr-1" />
+            收藏
+          </Button>
+        </div>
+        <Button variant="outline" onClick={onClear}>
+          清空历史
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {filteredHistory.map(entry => (
+          <div
+            key={entry.id}
+            className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div 
+                className="flex-1 cursor-pointer" 
+                onClick={() => onSelect(entry)}
+              >
+                <div className="space-y-2">
+                  <p className="text-gray-900 dark:text-gray-100">
+                    {entry.sourceText}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {entry.translatedText}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 ml-4 shrink-0">
+                <button
+                  onClick={() => onToggleFavorite(entry.id)}
+                  className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                    entry.isFavorite ? 'text-yellow-500' : 'text-gray-400'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onDelete(entry.id)}
+                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-between items-center text-sm text-gray-500">
+              <span>{formatDate(entry.timestamp)}</span>
+              <span className="text-xs">
+                {entry.sourceLang === 'zh' ? '中文' : 'English'} → {entry.targetLang === 'zh' ? '中文' : 'English'}
+              </span>
+            </div>
+          </div>
+        ))}
+        
+        {filteredHistory.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            {filter === 'all' ? '暂无翻译历史' : '暂无收藏记录'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+2. 修改 TranslatePanel 组件中的历史记录切换逻辑：
+
+```typescript:src/components/TranslatePanel.tsx
+// ... 其他代码保持不变 ...
+
+const handleHistorySelect = (entry: HistoryType) => {
+  setSourceText(entry.sourceText);
+  setTranslatedText({
+    text: entry.translatedText,
+    paragraphs: splitIntoParagraphs(entry.translatedText),
+    sourceLang: entry.sourceLang,
+    targetLang: entry.targetLang
+  });
+  setDetectedLang(entry.sourceLang);
+  setShowHistory(false);
+};
+
+return (
+  <div className="space-y-4">
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex gap-4">
+        <Button
+          onClick={() => setDisplayMode('full')}
+          variant={displayMode === 'full' ? 'default' : 'outline'}
+        >
+          整体显示
+        </Button>
+        <Button
+          onClick={() => setDisplayMode('parallel')}
+          variant={displayMode === 'parallel' ? 'default' : 'outline'}
+        >
+          对照显示
+        </Button>
+      </div>
+      <Button
+        variant="outline"
+        onClick={() => setShowHistory(!showHistory)}
+        className="flex items-center gap-2"
+      >
+        {showHistory ? '返回翻译' : '历史记录'}
+        {!showHistory && history.length > 0 && (
+          <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 rounded-full">
+            {history.length}
+          </span>
+        )}
+      </Button>
+    </div>
+
+    {/* ... 其他代码保持不变 ... */}
+  </div>
+);
+```
+
+这些更改添加了以下功能和改进：
+
+1. 历史记录项现在同时显示源文本和翻译结果
+2. 添加了翻译方向的显示（中文→英文 或 英文→中文）
+3. 添加了空状态提示
+4. 改进了历史记录按钮的显示，添加了记录数量的标记
+5. 优化了历史记录项的布局和样式
+6. 添加了深色模式支持
+7. 改进了点击区域的可用性
+
+现在当你点击历史记录项时，它会：
+1. 在输入框中显示原文
+2. 显示翻译结果
+3. 自动切换回翻译界面
+4. 保持正确的语言检测状态
+
+这样的用户体验应该更加直观和友好。需要我继续优化其他部分吗？
+
+---
+
 
 
 ---

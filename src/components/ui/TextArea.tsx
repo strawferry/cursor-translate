@@ -1,8 +1,11 @@
+import { ChangeEvent } from 'react';
+
 interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
+  onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
-export function TextArea({ error, className, ...props }: TextAreaProps) {
+export function TextArea({ error, className = '', ...props }: TextAreaProps) {
   return (
     <div className="w-full">
       <textarea

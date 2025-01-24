@@ -1,14 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { TextArea } from './ui/TextArea';
 import { Button } from './ui/Button';
 
+interface TranslationResult {
+  text: string;
+  paragraphs?: string[];
+}
+
 export default function TranslatePanel() {
   const [sourceText, setSourceText] = useState('');
-  const [translatedText, setTranslatedText] = useState('');
+  const [translatedText, setTranslatedText] = useState<TranslationResult | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [displayMode, setDisplayMode] = useState<'full' | 'parallel'>('full');
+
+  const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setSourceText(e.target.value);
+  };
+
+  const splitIntoParagraphs = (text: string): string[] => {
+    return text.split(/\n+/).filter(para => para.trim().length > 0);
+  };
 
   const handleTranslate = async () => {
     if (!sourceText.trim()) return;
@@ -24,12 +37,43 @@ export default function TranslatePanel() {
       });
       
       const data = await response.json();
-      setTranslatedText(data.translatedText);
+      
+      setTranslatedText({
+        text: data.translatedText,
+        paragraphs: splitIntoParagraphs(data.translatedText)
+      });
     } catch (error) {
       console.error('Translation error:', error);
     } finally {
       setIsTranslating(false);
     }
+  };
+
+  const renderParallelView = () => {
+    if (!translatedText?.paragraphs || !sourceText) return null;
+    const sourceParagraphs = splitIntoParagraphs(sourceText);
+
+    return (
+      <div className="space-y-6">
+        {sourceParagraphs.map((sourcePara, index) => (
+          <div key={index} className="space-y-2">
+            <p className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">{sourcePara}</p>
+            <p className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              {translatedText.paragraphs[index] || ''}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderFullView = () => {
+    if (!translatedText?.text) return null;
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+        {translatedText.text}
+      </div>
+    );
   };
 
   return (
@@ -52,7 +96,7 @@ export default function TranslatePanel() {
       <TextArea
         placeholder="请输入要翻译的文本..."
         value={sourceText}
-        onChange={(e) => setSourceText(e.target.value)}
+        onChange={handleTextChange}
         rows={6}
       />
 
@@ -67,9 +111,7 @@ export default function TranslatePanel() {
       {translatedText && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-2">翻译结果:</h3>
-          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-            {translatedText}
-          </div>
+          {displayMode === 'parallel' ? renderParallelView() : renderFullView()}
         </div>
       )}
     </div>

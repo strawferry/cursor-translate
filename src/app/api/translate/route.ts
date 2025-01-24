@@ -5,11 +5,17 @@ export async function POST(request: Request) {
     const { text } = await request.json();
 
     // TODO: 实现 DeepSeek API 调用
-    // 这里先mock返回结果
-    const translatedText = `Translated: ${text}`;
+    // 这里先模拟翻译结果，之后会替换为真实的 API 调用
+    const translatedText = text.split('\n').map(line => {
+      if (line.trim()) {
+        return `Translated: ${line.trim()}`;
+      }
+      return '';
+    }).join('\n');
 
     return NextResponse.json({ translatedText });
   } catch (error) {
+    console.error('Translation API error:', error);
     return NextResponse.json(
       { error: 'Translation failed' },
       { status: 500 }

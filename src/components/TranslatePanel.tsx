@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useCallback } from 'react';
 import { TextArea } from './ui/TextArea';
 import { Button } from './ui/Button';
 import { detectLanguage } from '@/services/translate';
+import { speechService } from '@/services/speech';
+import { Volume, StopCircle } from 'lucide-react';
 
 interface TranslationResult {
   text: string;
@@ -18,6 +20,7 @@ export default function TranslatePanel() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [displayMode, setDisplayMode] = useState<'full' | 'parallel'>('full');
   const [detectedLang, setDetectedLang] = useState<'en' | 'zh' | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -61,18 +64,55 @@ export default function TranslatePanel() {
     }
   };
 
+  const handleSpeak = useCallback((text: string, lang: 'en' | 'zh') => {
+    if (!speechService) return;
+    
+    if (isPlaying) {
+      speechService.stop();
+      setIsPlaying(false);
+    } else {
+      speechService.speak(text, lang);
+      setIsPlaying(true);
+    }
+  }, [isPlaying]);
+
+  const renderText = (text: string, lang: 'en' | 'zh', className: string = '') => (
+    <div className={`relative group ${className}`}>
+      <p className="pr-10">{text}</p>
+      <button
+        onClick={() => handleSpeak(text, lang)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+        title={isPlaying ? '停止播放' : '播放'}
+      >
+        {isPlaying ? (
+          <StopCircle className="w-5 h-5" />
+        ) : (
+          <Volume className="w-5 h-5" />
+        )}
+      </button>
+    </div>
+  );
+
   const renderParallelView = () => {
     if (!translatedText?.paragraphs || !sourceText) return null;
     const sourceParagraphs = splitIntoParagraphs(sourceText);
+    const sourceLang = detectedLang || 'en';
+    const targetLang = sourceLang === 'en' ? 'zh' : 'en';
 
     return (
       <div className="space-y-6">
         {sourceParagraphs.map((sourcePara, index) => (
           <div key={index} className="space-y-2">
-            <p className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">{sourcePara}</p>
-            <p className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-              {translatedText.paragraphs[index] || ''}
-            </p>
+            {renderText(
+              sourcePara,
+              sourceLang,
+              'bg-gray-50 dark:bg-gray-900 p-3 rounded-lg'
+            )}
+            {renderText(
+              translatedText.paragraphs[index] || '',
+              targetLang,
+              'bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg'
+            )}
           </div>
         ))}
       </div>
@@ -81,10 +121,12 @@ export default function TranslatePanel() {
 
   const renderFullView = () => {
     if (!translatedText?.text) return null;
-    return (
-      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-        {translatedText.text}
-      </div>
+    const targetLang = detectedLang === 'en' ? 'zh' : 'en';
+    
+    return renderText(
+      translatedText.text,
+      targetLang,
+      'bg-gray-50 dark:bg-gray-900 p-4 rounded-lg'
     );
   };
 

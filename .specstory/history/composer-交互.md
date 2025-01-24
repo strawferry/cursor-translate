@@ -532,7 +532,397 @@ _**User**_
 
 _**Assistant**_
 
+我注意到还有一个模块导入错误需要解决。让我们先创建必要的目录结构，然后继续实现功能。
 
+1. 首先创建组件目录结构:
+
+```typescript:src/components/index.ts
+export { default as TranslatePanel } from './TranslatePanel';
+```
+
+2. 接下来让我们实现 DeepSeek API 的集成。首先创建一个配置文件:
+
+```typescript:src/config/index.ts
+export const DEEPSEEK_API_KEY = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || '';
+export const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+```
+
+3. 创建 DeepSeek API 服务:
+
+```typescript:src/services/translate.ts
+import { DEEPSEEK_API_KEY, DEEPSEEK_API_URL } from '@/config';
+
+interface TranslateOptions {
+  text: string;
+  sourceLang?: string;
+  targetLang?: string;
+}
+
+export async function translateText({ text, sourceLang, targetLang }: TranslateOptions) {
+  const prompt = `Translate the following ${sourceLang || 'text'} to ${targetLang || 'English'}:\n\n${text}`;
+  
+  try {
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Translation failed');
+    }
+
+    return data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('Translation service error:', error);
+    throw error;
+  }
+}
+
+export function detectLanguage(text: string): 'en' | 'zh' {
+  // 简单的语言检测：检查是否包含中文字符
+  const hasChineseChar = /[\u4e00-\u9fa5]/.test(text);
+  return hasChineseChar ? 'zh' : 'en';
+}
+```
+
+4. 更新翻译 API 路由:
+
+```typescript:src/app/api/translate/route.ts
+import { NextResponse } from 'next/server';
+import { translateText, detectLanguage } from '@/services/translate';
+
+export async function POST(request: Request) {
+  try {
+    const { text } = await request.json();
+    
+    if (!text?.trim()) {
+      return NextResponse.json(
+        { error: 'Text is required' },
+        { status: 400 }
+      );
+    }
+
+    const sourceLang = detectLanguage(text);
+    const targetLang = sourceLang === 'en' ? 'zh' : 'en';
+
+    const translatedText = await translateText({
+      text,
+      sourceLang,
+      targetLang,
+    });
+
+    return NextResponse.json({ translatedText });
+  } catch (error) {
+    console.error('Translation API error:', error);
+    return NextResponse.json(
+      { error: 'Translation failed' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+5. 创建环境变量文件:
+
+```plaintext:.env.local
+NEXT_PUBLIC_DEEPSEEK_API_KEY=your_api_key_here
+```
+
+6. 更新 TranslatePanel 组件，添加语言检测显示:
+
+```typescript:src/components/TranslatePanel.tsx
+// ... 前面的代码保持不变 ...
+
+interface TranslationResult {
+  text: string;
+  paragraphs?: string[];
+  sourceLang?: 'en' | 'zh';
+  targetLang?: 'en' | 'zh';
+}
+
+export default function TranslatePanel() {
+  // ... 其他 state 保持不变 ...
+  const [detectedLang, setDetectedLang] = useState<'en' | 'zh' | null>(null);
+
+  const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setSourceText(newText);
+    
+    if (newText.trim()) {
+      const lang = detectLanguage(newText);
+      setDetectedLang(lang);
+    } else {
+      setDetectedLang(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-4">
+          <Button
+            onClick={() => setDisplayMode('full')}
+            variant={displayMode === 'full' ? 'default' : 'outline'}
+          >
+            整体显示
+          </Button>
+          <Button
+            onClick={() => setDisplayMode('parallel')}
+            variant={displayMode === 'parallel' ? 'default' : 'outline'}
+          >
+            对照显示
+          </Button>
+        </div>
+        {detectedLang && (
+          <div className="text-sm text-gray-500">
+            {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+          </div>
+        )}
+      </div>
+
+      {/* ... 其余代码保持不变 ... */}
+    </div>
+  );
+}
+```
+
+这些更改实现了:
+
+1. DeepSeek API 集成
+2. 自动语言检测
+3. 更好的错误处理
+4. 环境变量配置
+
+要使用这些功能，你需要:
+
+1. 注册 DeepSeek API 并获取 API key
+2. 创建 `.env.local` 文件并添加你的 API key
+3. 运行 `npm install` 安装依赖
+4. 启动开发服务器 `npm run dev`
+
+接下来我们可以:
+1. 实现语音播报功能
+2. 添加翻译历史记录
+3. 添加错误提示和加载动画
+
+你想先实现哪个功能？
+
+---
+
+_**User**_
+
+继续功能实现
+
+---
+
+_**Assistant**_
+
+好的，我注意到还有一些导入路径的问题需要解决。让我们先修复这些问题，然后继续实现功能。
+
+1. 首先修改 `tsconfig.json` 确保路径别名正确配置：
+
+```typescript:tsconfig.json
+{
+  "compilerOptions": {
+    // ... 其他配置保持不变
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  // ... 其他配置保持不变
+}
+```
+
+2. 现在让我们添加语音播报功能。首先创建一个语音服务：
+
+```typescript:src/services/speech.ts
+export class SpeechService {
+  private synthesis: SpeechSynthesis;
+  private voices: Map<string, SpeechSynthesisVoice>;
+
+  constructor() {
+    this.synthesis = window.speechSynthesis;
+    this.voices = new Map();
+    this.initVoices();
+  }
+
+  private initVoices() {
+    // 初始化时加载可用的语音
+    const updateVoices = () => {
+      this.synthesis.getVoices().forEach(voice => {
+        if (voice.lang.startsWith('zh') || voice.lang.startsWith('en')) {
+          this.voices.set(voice.lang, voice);
+        }
+      });
+    };
+
+    // 某些浏览器需要等待voices加载
+    if (this.synthesis.getVoices().length) {
+      updateVoices();
+    }
+    this.synthesis.onvoiceschanged = updateVoices;
+  }
+
+  speak(text: string, lang: 'en' | 'zh') {
+    // 停止当前正在播放的语音
+    this.synthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === 'zh' ? 'zh-CN' : 'en-US';
+    
+    // 尝试使用对应语言的声音
+    const voice = this.voices.get(utterance.lang);
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    this.synthesis.speak(utterance);
+  }
+
+  stop() {
+    this.synthesis.cancel();
+  }
+}
+
+// 创建单例实例
+export const speechService = typeof window !== 'undefined' ? new SpeechService() : null;
+```
+
+3. 更新 TranslatePanel 组件，添加语音播报功能：
+
+```typescript:src/components/TranslatePanel.tsx
+'use client';
+
+import { useState, ChangeEvent, useCallback } from 'react';
+import { TextArea } from './ui/TextArea';
+import { Button } from './ui/Button';
+import { detectLanguage } from '@/services/translate';
+import { speechService } from '@/services/speech';
+import { VolumeUp, StopCircle } from 'lucide-react'; // 需要安装 lucide-react
+
+// ... TranslationResult 接口保持不变 ...
+
+export default function TranslatePanel() {
+  // ... 现有的 state 保持不变 ...
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // ... 其他现有的处理函数保持不变 ...
+
+  const handleSpeak = useCallback((text: string, lang: 'en' | 'zh') => {
+    if (!speechService) return;
+    
+    if (isPlaying) {
+      speechService.stop();
+      setIsPlaying(false);
+    } else {
+      speechService.speak(text, lang);
+      setIsPlaying(true);
+    }
+  }, [isPlaying]);
+
+  const renderText = (text: string, lang: 'en' | 'zh', className: string = '') => (
+    <div className={`relative group ${className}`}>
+      <p className="pr-10">{text}</p>
+      <button
+        onClick={() => handleSpeak(text, lang)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+        title={isPlaying ? '停止播放' : '播放'}
+      >
+        {isPlaying ? (
+          <StopCircle className="w-5 h-5" />
+        ) : (
+          <VolumeUp className="w-5 h-5" />
+        )}
+      </button>
+    </div>
+  );
+
+  const renderParallelView = () => {
+    if (!translatedText?.paragraphs || !sourceText) return null;
+    const sourceParagraphs = splitIntoParagraphs(sourceText);
+    const sourceLang = detectedLang || 'en';
+    const targetLang = sourceLang === 'en' ? 'zh' : 'en';
+
+    return (
+      <div className="space-y-6">
+        {sourceParagraphs.map((sourcePara, index) => (
+          <div key={index} className="space-y-2">
+            {renderText(
+              sourcePara,
+              sourceLang,
+              'bg-gray-50 dark:bg-gray-900 p-3 rounded-lg'
+            )}
+            {renderText(
+              translatedText.paragraphs[index] || '',
+              targetLang,
+              'bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg'
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderFullView = () => {
+    if (!translatedText?.text) return null;
+    const targetLang = detectedLang === 'en' ? 'zh' : 'en';
+    
+    return renderText(
+      translatedText.text,
+      targetLang,
+      'bg-gray-50 dark:bg-gray-900 p-4 rounded-lg'
+    );
+  };
+
+  // ... 其余代码保持不变 ...
+}
+```
+
+4. 安装所需的依赖：
+
+```bash
+npm install lucide-react
+```
+
+这些更改添加了以下功能：
+
+1. 语音播报支持
+2. 悬停时显示播放按钮
+3. 支持停止播放
+4. 自动选择合适的语音
+5. 适配深色模式
+
+要测试这些功能：
+
+1. 确保你的浏览器支持 Web Speech API
+2. 输入一些文本并点击翻译
+3. 将鼠标悬停在文本上，会出现播放按钮
+4. 点击播放按钮开始语音播报
+5. 再次点击可以停止播放
+
+接下来我们可以：
+1. 添加翻译历史记录功能
+2. 实现错误提示
+3. 添加加载动画
+4. 优化移动端体验
+
+你想先实现哪个功能？
 
 ---
 

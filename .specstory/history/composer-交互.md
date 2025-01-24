@@ -2381,6 +2381,152 @@ npm install
 
 ---
 
+_**User**_
+
+现在界面显示如图,我希望中间标题能够居中,同时卡片能够显示的更好看一些
+
+
+---
+
+_**Assistant**_
+
+好的,让我们来优化界面的显示效果。主要修改 TranslatePanel 组件的布局和样式：
+
+```typescript:src/components/TranslatePanel.tsx
+export default function TranslatePanel() {
+  // ... 其他代码保持不变
+
+  return (
+    <div className="container max-w-4xl mx-auto p-4 min-h-screen flex flex-col">
+      <h1 className="text-2xl font-medium text-center mb-8">中英文互译</h1>
+      
+      <Card className="flex-1 bg-white/80 backdrop-blur-xl border-none shadow-lg">
+        <CardHeader className="border-b border-gray-100/20">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              {detectedLang && (
+                <span className="text-sm text-muted-foreground">
+                  {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2"
+            >
+              {showHistory ? '返回翻译' : '历史记录'}
+              {!showHistory && history.length > 0 && (
+                <span className="px-1.5 py-0.5 text-xs bg-primary/10 rounded-full">
+                  {history.length}
+                </span>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6 p-6">
+          <div className="relative">
+            <Textarea
+              placeholder="请输入要翻译的文本..."
+              value={sourceText}
+              onChange={handleTextChange}
+              rows={6}
+              className="resize-none bg-gray-50/50 border-none focus:ring-2 focus:ring-blue-500/20 text-base"
+            />
+            <Button 
+              onClick={handleTranslate}
+              disabled={isTranslating || !sourceText.trim()}
+              className="absolute bottom-4 right-4"
+              size="sm"
+            >
+              {isTranslating ? '翻译中...' : '翻译'}
+            </Button>
+          </div>
+
+          {showHistory ? (
+            <TranslationHistory
+              history={history}
+              onSelect={handleHistorySelect}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDeleteHistory}
+              onClear={handleClearHistory}
+            />
+          ) : (
+            <>
+              {translatedText && (
+                <div className="space-y-6">
+                  <Separator className="bg-gray-100/50" />
+                  
+                  {/* 整体翻译结果 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">整体翻译</h3>
+                    <Card className="bg-gray-50/50 border-none hover:bg-gray-50/80 transition-colors">
+                      <CardContent className="p-4">
+                        {renderText(
+                          translatedText.text,
+                          (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                          ''
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* 对照翻译 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">对照翻译</h3>
+                    <div className="space-y-4">
+                      {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
+                        <div key={index} className="grid gap-3">
+                          <Card className="bg-gray-50/50 border-none hover:bg-gray-50/80 transition-colors">
+                            <CardContent className="p-4">
+                              {renderText(
+                                sourcePara,
+                                detectedLang || 'en',
+                                ''
+                              )}
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-blue-50/50 border-none hover:bg-blue-50/80 transition-colors">
+                            <CardContent className="p-4">
+                              {renderText(
+                                translatedText.paragraphs?.[index] || '',
+                                (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                                ''
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+主要改进：
+
+1. 将标题移到卡片外部并居中显示
+2. 调整卡片的背景色和模糊效果，使其更符合 Apple 风格
+3. 添加了卡片头部的边框分隔线
+4. 优化了内容区域的间距和内边距
+5. 改进了文本输入框和翻译结果卡片的样式
+6. 添加了卡片的悬停效果和过渡动画
+7. 使用更柔和的颜色和透明度
+8. 优化了整体的视觉层次
+
+这些更改应该能让界面看起来更加精致和现代。需要我继续调整其他部分吗？
+
+---
+
 
 
 ---

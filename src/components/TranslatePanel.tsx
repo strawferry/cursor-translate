@@ -151,19 +151,19 @@ export default function TranslatePanel() {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto p-4">
-      <Card className="bg-white/50 backdrop-blur-xl border-none shadow-lg">
-        <CardHeader className="space-y-1">
+    <div className="container max-w-4xl mx-auto p-4 min-h-screen flex flex-col">
+      <h1 className="text-2xl font-medium text-center mb-8">中英文互译</h1>
+      
+      <Card className="flex-1 bg-white/80 backdrop-blur-xl border-none shadow-lg">
+        <CardHeader className="border-b border-gray-100/20">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-xl font-medium">
-              {detectedLang ? (
-                <span className="text-sm font-normal text-muted-foreground">
+            <div className="flex items-center gap-2">
+              {detectedLang && (
+                <span className="text-sm text-muted-foreground">
                   {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
                 </span>
-              ) : (
-                "中英文互译"
               )}
-            </CardTitle>
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -179,14 +179,15 @@ export default function TranslatePanel() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        <CardContent className="space-y-6 p-6">
           <div className="relative">
             <Textarea
               placeholder="请输入要翻译的文本..."
               value={sourceText}
               onChange={handleTextChange}
               rows={6}
-              className="resize-none bg-muted/50 border-none focus:ring-1 focus:ring-primary/20"
+              className="resize-none bg-gray-50/50 border-none focus:ring-2 focus:ring-blue-500/20 text-base"
             />
             <Button 
               onClick={handleTranslate}
@@ -209,12 +210,13 @@ export default function TranslatePanel() {
           ) : (
             <>
               {translatedText && (
-                <div className="space-y-6 pt-4">
-                  <Separator />
+                <div className="space-y-6">
+                  <Separator className="bg-gray-100/50" />
+                  
                   {/* 整体翻译结果 */}
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">整体翻译</h3>
-                    <Card className="bg-muted/50 border-none">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">整体翻译</h3>
+                    <Card className="bg-gray-50/50 border-none hover:bg-gray-50/80 transition-colors">
                       <CardContent className="p-4">
                         {renderText(
                           translatedText.text,
@@ -227,12 +229,12 @@ export default function TranslatePanel() {
 
                   {/* 对照翻译 */}
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">对照翻译</h3>
-                    <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">对照翻译</h3>
+                    <div className="space-y-4">
                       {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
-                        <div key={index} className="grid gap-2">
-                          <Card className="bg-muted/50 border-none">
-                            <CardContent className="p-3">
+                        <div key={index} className="grid gap-3">
+                          <Card className="bg-gray-50/50 border-none hover:bg-gray-50/80 transition-colors">
+                            <CardContent className="p-4">
                               {renderText(
                                 sourcePara,
                                 detectedLang || 'en',
@@ -240,8 +242,8 @@ export default function TranslatePanel() {
                               )}
                             </CardContent>
                           </Card>
-                          <Card className="bg-primary/5 border-none">
-                            <CardContent className="p-3">
+                          <Card className="bg-blue-50/50 border-none hover:bg-blue-50/80 transition-colors">
+                            <CardContent className="p-4">
                               {renderText(
                                 translatedText.paragraphs?.[index] || '',
                                 (detectedLang || 'en') === 'en' ? 'zh' : 'en',

@@ -21,7 +21,6 @@ export default function TranslatePanel() {
   const [sourceText, setSourceText] = useState('');
   const [translatedText, setTranslatedText] = useState<TranslationResult | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [displayMode, setDisplayMode] = useState<'full' | 'parallel'>('full');
   const [detectedLang, setDetectedLang] = useState<'en' | 'zh' | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [history, setHistory] = useState<HistoryType[]>([]);
@@ -116,43 +115,6 @@ export default function TranslatePanel() {
     </div>
   );
 
-  const renderParallelView = () => {
-    if (!translatedText?.paragraphs || !sourceText) return null;
-    const sourceParagraphs = splitIntoParagraphs(sourceText);
-    const sourceLang = detectedLang || 'en';
-    const targetLang = sourceLang === 'en' ? 'zh' : 'en';
-
-    return (
-      <div className="space-y-6">
-        {sourceParagraphs.map((sourcePara, index) => (
-          <div key={index} className="space-y-2">
-            {renderText(
-              sourcePara,
-              sourceLang,
-              'bg-gray-50 dark:bg-gray-900 p-3 rounded-lg'
-            )}
-            {renderText(
-              translatedText.paragraphs[index] || '',
-              targetLang,
-              'bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg'
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderFullView = () => {
-    if (!translatedText?.text) return null;
-    const targetLang = detectedLang === 'en' ? 'zh' : 'en';
-    
-    return renderText(
-      translatedText.text,
-      targetLang,
-      'bg-gray-50 dark:bg-gray-900 p-4 rounded-lg'
-    );
-  };
-
   const handleHistorySelect = (entry: HistoryType) => {
     setSourceText(entry.sourceText);
     setTranslatedText({
@@ -189,25 +151,13 @@ export default function TranslatePanel() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-4">
-          <Button
-            onClick={() => setDisplayMode('full')}
-            variant={displayMode === 'full' ? 'default' : 'outline'}
-          >
-            整体显示
-          </Button>
-          <Button
-            onClick={() => setDisplayMode('parallel')}
-            variant={displayMode === 'parallel' ? 'default' : 'outline'}
-          >
-            对照显示
-          </Button>
+        <div className="flex items-center gap-2">
+          {detectedLang && (
+            <div className="text-sm text-gray-500">
+              {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+            </div>
+          )}
         </div>
-        {detectedLang && (
-          <div className="text-sm text-gray-500">
-            {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
-          </div>
-        )}
         <Button
           variant="outline"
           onClick={() => setShowHistory(!showHistory)}
@@ -248,9 +198,37 @@ export default function TranslatePanel() {
       ) : (
         <>
           {translatedText && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-2">翻译结果:</h3>
-              {displayMode === 'parallel' ? renderParallelView() : renderFullView()}
+            <div className="mt-6 space-y-6">
+              {/* 整体翻译结果 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">整体翻译</h3>
+                {renderText(
+                  translatedText.text,
+                  (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                  'bg-gray-50 dark:bg-gray-900 p-4 rounded-lg'
+                )}
+              </div>
+
+              {/* 对照翻译 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">对照翻译</h3>
+                <div className="space-y-4">
+                  {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
+                    <div key={index} className="space-y-2">
+                      {renderText(
+                        sourcePara,
+                        detectedLang || 'en',
+                        'bg-gray-50 dark:bg-gray-900 p-3 rounded-lg'
+                      )}
+                      {renderText(
+                        translatedText.paragraphs?.[index] || '',
+                        (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                        'bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg'
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </>

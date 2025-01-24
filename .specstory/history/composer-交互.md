@@ -1474,6 +1474,37 @@ return (
 
 ---
 
+_**User**_
+
+我想把译文和对照翻译直接显示在下方
+
+---
+
+_**Assistant**_
+
+好的，我们可以修改 TranslatePanel 组件，让译文和对照翻译同时显示在下方。以下是修改建议：
+
+```typescript:src/components/TranslatePanel.tsx
+// ... 其他导入和接口保持不变 ...
+
+export default function TranslatePanel() {
+  // ... 其他 state 和函数保持不变 ...
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          {detectedLang && (
+            <div className="text-sm text-gray-500">
+              {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+            </div>
+          )}
+        </div>
+        <Button
+          variant="
+
+---
+
 
 
 ---

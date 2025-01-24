@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TranslationHistory as HistoryType } from '@/types';
-import { Button } from './ui/Button';
+import { Button } from './ui/button';
 import { Star, Trash2, Clock } from 'lucide-react';
 
 interface TranslationHistoryProps {

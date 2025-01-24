@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, ChangeEvent, useCallback, useEffect } from 'react';
-import { TextArea } from './ui/TextArea';
-import { Button } from './ui/Button';
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import { detectLanguage } from '@/services/translate';
 import { speechService } from '@/services/speech';
 import { Volume, StopCircle } from 'lucide-react';
 import { historyService } from '@/services/history';
 import { TranslationHistory as HistoryType } from '@/types';
 import { TranslationHistory } from './TranslationHistory';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 
 interface TranslationResult {
   text: string;
@@ -149,90 +151,114 @@ export default function TranslatePanel() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          {detectedLang && (
-            <div className="text-sm text-gray-500">
-              {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
-            </div>
-          )}
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowHistory(!showHistory)}
-          className="flex items-center gap-2"
-        >
-          {showHistory ? '返回翻译' : '历史记录'}
-          {!showHistory && history.length > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 rounded-full">
-              {history.length}
-            </span>
-          )}
-        </Button>
-      </div>
+    <div className="container max-w-4xl mx-auto p-4">
+      <Card className="bg-white/50 backdrop-blur-xl border-none shadow-lg">
+        <CardHeader className="space-y-1">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-medium">
+              {detectedLang ? (
+                <span className="text-sm font-normal text-muted-foreground">
+                  {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+                </span>
+              ) : (
+                "中英文互译"
+              )}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2"
+            >
+              {showHistory ? '返回翻译' : '历史记录'}
+              {!showHistory && history.length > 0 && (
+                <span className="px-1.5 py-0.5 text-xs bg-primary/10 rounded-full">
+                  {history.length}
+                </span>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Textarea
+              placeholder="请输入要翻译的文本..."
+              value={sourceText}
+              onChange={handleTextChange}
+              rows={6}
+              className="resize-none bg-muted/50 border-none focus:ring-1 focus:ring-primary/20"
+            />
+            <Button 
+              onClick={handleTranslate}
+              disabled={isTranslating || !sourceText.trim()}
+              className="absolute bottom-4 right-4"
+              size="sm"
+            >
+              {isTranslating ? '翻译中...' : '翻译'}
+            </Button>
+          </div>
 
-      <TextArea
-        placeholder="请输入要翻译的文本..."
-        value={sourceText}
-        onChange={handleTextChange}
-        rows={6}
-      />
+          {showHistory ? (
+            <TranslationHistory
+              history={history}
+              onSelect={handleHistorySelect}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDeleteHistory}
+              onClear={handleClearHistory}
+            />
+          ) : (
+            <>
+              {translatedText && (
+                <div className="space-y-6 pt-4">
+                  <Separator />
+                  {/* 整体翻译结果 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">整体翻译</h3>
+                    <Card className="bg-muted/50 border-none">
+                      <CardContent className="p-4">
+                        {renderText(
+                          translatedText.text,
+                          (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                          ''
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
 
-      <Button 
-        onClick={handleTranslate}
-        disabled={isTranslating || !sourceText.trim()}
-        className="w-full"
-      >
-        {isTranslating ? '翻译中...' : '翻译'}
-      </Button>
-
-      {showHistory ? (
-        <TranslationHistory
-          history={history}
-          onSelect={handleHistorySelect}
-          onToggleFavorite={handleToggleFavorite}
-          onDelete={handleDeleteHistory}
-          onClear={handleClearHistory}
-        />
-      ) : (
-        <>
-          {translatedText && (
-            <div className="mt-6 space-y-6">
-              {/* 整体翻译结果 */}
-              <div>
-                <h3 className="text-lg font-semibold mb-2">整体翻译</h3>
-                {renderText(
-                  translatedText.text,
-                  (detectedLang || 'en') === 'en' ? 'zh' : 'en',
-                  'bg-gray-50 dark:bg-gray-900 p-4 rounded-lg'
-                )}
-              </div>
-
-              {/* 对照翻译 */}
-              <div>
-                <h3 className="text-lg font-semibold mb-2">对照翻译</h3>
-                <div className="space-y-4">
-                  {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
-                    <div key={index} className="space-y-2">
-                      {renderText(
-                        sourcePara,
-                        detectedLang || 'en',
-                        'bg-gray-50 dark:bg-gray-900 p-3 rounded-lg'
-                      )}
-                      {renderText(
-                        translatedText.paragraphs?.[index] || '',
-                        (detectedLang || 'en') === 'en' ? 'zh' : 'en',
-                        'bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg'
-                      )}
+                  {/* 对照翻译 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">对照翻译</h3>
+                    <div className="space-y-3">
+                      {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
+                        <div key={index} className="grid gap-2">
+                          <Card className="bg-muted/50 border-none">
+                            <CardContent className="p-3">
+                              {renderText(
+                                sourcePara,
+                                detectedLang || 'en',
+                                ''
+                              )}
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-primary/5 border-none">
+                            <CardContent className="p-3">
+                              {renderText(
+                                translatedText.paragraphs?.[index] || '',
+                                (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                                ''
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 } 

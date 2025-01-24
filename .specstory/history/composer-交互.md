@@ -1501,7 +1501,883 @@ export default function TranslatePanel() {
           )}
         </div>
         <Button
-          variant="
+          variant="outline"
+          onClick={() => setShowHistory(!showHistory)}
+          className="flex items-center gap-2"
+        >
+          {showHistory ? '返回翻译' : '历史记录'}
+          {!showHistory && history.length > 0 && (
+            <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 rounded-full">
+              {history.length}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      <TextArea
+        placeholder="请输入要翻译的文本..."
+        value={sourceText}
+        onChange={handleTextChange}
+        rows={6}
+      />
+
+      <Button 
+        onClick={handleTranslate}
+        disabled={isTranslating || !sourceText.trim()}
+        className="w-full"
+      >
+        {isTranslating ? '翻译中...' : '翻译'}
+      </Button>
+
+      {showHistory ? (
+        <TranslationHistory
+          history={history}
+          onSelect={handleHistorySelect}
+          onToggleFavorite={handleToggleFavorite}
+          onDelete={handleDeleteHistory}
+          onClear={handleClearHistory}
+        />
+      ) : (
+        <>
+          {translatedText && (
+            <div className="mt-6 space-y-6">
+              {/* 整体翻译结果 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">整体翻译</h3>
+                {renderText(
+                  translatedText.text,
+                  (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                  'bg-gray-50 dark:bg-gray-900 p-4 rounded-lg'
+                )}
+              </div>
+
+              {/* 对照翻译 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">对照翻译</h3>
+                <div className="space-y-4">
+                  {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
+                    <div key={index} className="space-y-2">
+                      {renderText(
+                        sourcePara,
+                        detectedLang || 'en',
+                        'bg-gray-50 dark:bg-gray-900 p-3 rounded-lg'
+                      )}
+                      {renderText(
+                        translatedText.paragraphs?.[index] || '',
+                        (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                        'bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg'
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+主要更改：
+
+1. 移除了显示模式切换按钮
+2. 将整体翻译和对照翻译同时显示在结果区域
+3. 整体翻译显示在上方，对照翻译显示在下方
+4. 每个部分都有清晰的标题
+5. 保持了语音播放和其他功能的完整性
+
+这样的布局更直观，用户可以同时看到两种翻译形式，方便对比和理解。需要我继续优化其他部分吗？
+
+---
+
+_**User**_
+
+现在页面 UI 现在偏丑,我希望你使用 @https://ui.shadcn.com/  组件库,并安装 Apple 的设计风格重新设计一下页面
+
+---
+
+_**Assistant**_
+
+好的,我们可以使用 shadcn/ui 组件库来美化界面。首先需要安装和配置 shadcn/ui：
+
+1. 首先安装必要的依赖：
+
+```bash
+npx shadcn-ui@latest init
+```
+
+2. 创建一个卡片组件来包装我们的内容：
+
+```typescript:src/components/ui/card.tsx
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+```
+
+3. 更新 TranslatePanel 组件的设计：
+
+```typescript:src/components/TranslatePanel.tsx
+// ... 其他导入保持不变
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+
+export default function TranslatePanel() {
+  // ... state 和函数保持不变
+
+  return (
+    <div className="container max-w-4xl mx-auto p-4">
+      <Card className="bg-white/50 backdrop-blur-xl border-none shadow-lg">
+        <CardHeader className="space-y-1">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-medium">
+              {detectedLang ? (
+                <span className="text-sm font-normal text-muted-foreground">
+                  {detectedLang === 'zh' ? '检测到中文' : 'Detected English'}
+                </span>
+              ) : (
+                "中英文互译"
+              )}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2"
+            >
+              {showHistory ? '返回翻译' : '历史记录'}
+              {!showHistory && history.length > 0 && (
+                <span className="px-1.5 py-0.5 text-xs bg-primary/10 rounded-full">
+                  {history.length}
+                </span>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <TextArea
+              placeholder="请输入要翻译的文本..."
+              value={sourceText}
+              onChange={handleTextChange}
+              rows={6}
+              className="resize-none bg-muted/50 border-none focus:ring-1 focus:ring-primary/20"
+            />
+            <Button 
+              onClick={handleTranslate}
+              disabled={isTranslating || !sourceText.trim()}
+              className="absolute bottom-4 right-4"
+              size="sm"
+            >
+              {isTranslating ? '翻译中...' : '翻译'}
+            </Button>
+          </div>
+
+          {showHistory ? (
+            <TranslationHistory
+              history={history}
+              onSelect={handleHistorySelect}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDeleteHistory}
+              onClear={handleClearHistory}
+            />
+          ) : (
+            <>
+              {translatedText && (
+                <div className="space-y-6 pt-4">
+                  <Separator />
+                  {/* 整体翻译结果 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">整体翻译</h3>
+                    <Card className="bg-muted/50 border-none">
+                      <CardContent className="p-4">
+                        {renderText(
+                          translatedText.text,
+                          (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                          ''
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* 对照翻译 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">对照翻译</h3>
+                    <div className="space-y-3">
+                      {splitIntoParagraphs(sourceText).map((sourcePara, index) => (
+                        <div key={index} className="grid gap-2">
+                          <Card className="bg-muted/50 border-none">
+                            <CardContent className="p-3">
+                              {renderText(
+                                sourcePara,
+                                detectedLang || 'en',
+                                ''
+                              )}
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-primary/5 border-none">
+                            <CardContent className="p-3">
+                              {renderText(
+                                translatedText.paragraphs?.[index] || '',
+                                (detectedLang || 'en') === 'en' ? 'zh' : 'en',
+                                ''
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+4. 更新 TranslationHistory 组件的设计：
+
+```typescript:src/components/TranslationHistory.tsx
+// ... 其他导入保持不变
+import { Card, CardContent } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+
+export function TranslationHistory({
+  // ... props 保持不变
+}) {
+  // ... 其他代码保持不变
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setFilter('all')}
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            全部
+          </Button>
+          <Button
+            variant={filter === 'favorites' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setFilter('favorites')}
+          >
+            <Star className="w-4 h-4 mr-1" />
+            收藏
+          </Button>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={onClear}
+          className="text-muted-foreground"
+        >
+          清空历史
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {filteredHistory.map(entry => (
+          <Card
+            key={entry.id}
+            className="bg-muted/50 border-none hover:bg-muted/70 transition-colors"
+          >
+            <CardContent className="p-3">
+              <div 
+                className="cursor-pointer" 
+                onClick={() => onSelect(entry)}
+              >
+                <p className="line-clamp-2 mb-1">{entry.sourceText}</p>
+                <p className="text-sm text-muted-foreground line-clamp-1">
+                  {entry.translatedText}
+                </p>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
+                <span>{formatDate(entry.timestamp)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">
+                    {entry.sourceLang === 'zh' ? '中文' : 'English'} → {entry.targetLang === 'zh' ? '中文' : 'English'}
+                  </span>
+                  <button
+                    onClick={() => onToggleFavorite(entry.id)}
+                    className={`p-1 rounded-full hover:bg-muted ${
+                      entry.isFavorite ? 'text-yellow-500' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <Star className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(entry.id)}
+                    className="p-1 rounded-full hover:bg-muted text-muted-foreground"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        
+        {filteredHistory.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            {filter === 'all' ? '暂无翻译历史' : '暂无收藏记录'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+这些更改带来了以下改进：
+
+1. 使用磨砂玻璃效果的卡片作为主容器
+2. 更现代的输入框设计
+3. 更清晰的层次结构
+4. 更好的空间利用
+5. 更细腻的动画和过渡效果
+6. 更好的深色模式支持
+7. 更符合 Apple 设计风格的视觉效果
+
+需要我继续优化其他部分吗？
+
+---
+
+_**User**_
+
+@Codebase 现在你分析查看一下整体代码,有好多运行报错,主要体现在 shadcn 组件未能引入,请修复一下
+
+---
+
+_**Assistant**_
+
+好的,我来帮你修复 shadcn/ui 组件的引入问题。首先需要正确安装和配置 shadcn/ui：
+
+1. 首先安装基础依赖：
+
+```bash
+npm install @radix-ui/react-slot class-variance-authority clsx tailwind-merge lucide-react
+```
+
+2. 创建必要的工具函数文件：
+
+```typescript:src/lib/utils.ts
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+ 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+```
+
+3. 创建按钮组件：
+
+```typescript:src/components/ui/button.tsx
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+```
+
+4. 创建分隔线组件：
+
+```typescript:src/components/ui/separator.tsx
+import * as React from "react"
+import * as SeparatorPrimitive from "@radix-ui/react-separator"
+
+import { cn } from "@/lib/utils"
+
+const Separator = React.forwardRef<
+  React.ElementRef<typeof SeparatorPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
+>(
+  (
+    { className, orientation = "horizontal", decorative = true, ...props },
+    ref
+  ) => (
+    <SeparatorPrimitive.Root
+      ref={ref}
+      decorative={decorative}
+      orientation={orientation}
+      className={cn(
+        "shrink-0 bg-border",
+        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+        className
+      )}
+      {...props}
+    />
+  )
+)
+Separator.displayName = SeparatorPrimitive.Root.displayName
+
+export { Separator }
+```
+
+5. 创建文本区域组件：
+
+```typescript:src/components/ui/textarea.tsx
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+export interface TextareaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        className={cn(
+          "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Textarea.displayName = "Textarea"
+
+export { Textarea }
+```
+
+6. 更新 tailwind.config.js 配置：
+
+```javascript:tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+	],
+  theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: 0 },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: 0 },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}
+```
+
+7. 添加全局 CSS 变量：
+
+```css:src/app/globals.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+```
+
+8. 修改 TranslatePanel 组件中的导入：
+
+```typescript:src/components/TranslatePanel.tsx
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
+```
+
+这些更改完成后，shadcn/ui 组件应该可以正常工作了。需要注意的是：
+
+1. 确保安装了所有必要的依赖
+2. 正确配置了 tailwind.config.js
+3. 导入了全局 CSS 变量
+4. 组件路径使用正确的大小写
+
+如果还有其他报错，请告诉我具体的错误信息，我会帮你解决。
+
+---
+
+_**User**_
+
+帮忙修复运行报错
+
+---
+
+_**Assistant**_
+
+看起来主要是缺少必要的依赖和文件路径问题。让我们一步步修复：
+
+1. 首先安装所需的依赖：
+
+```bash
+npm install @radix-ui/react-separator @radix-ui/react-slot class-variance-authority clsx tailwind-merge lucide-react tailwindcss-animate
+```
+
+2. 修改文件名称以匹配导入路径（注意大小写）：
+
+```bash
+mv src/components/ui/Button.tsx src/components/ui/button.tsx
+mv src/components/ui/TextArea.tsx src/components/ui/textarea.tsx
+```
+
+3. 创建 components.json 配置文件：
+
+```json:components.json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "src/app/globals.css",
+    "baseColor": "slate",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils"
+  }
+}
+```
+
+4. 确保 tsconfig.json 中的路径别名配置正确：
+
+```json:tsconfig.json
+{
+  "compilerOptions": {
+    // ... 其他配置保持不变
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+5. 创建 lib/utils.ts 文件（如果还没有）：
+
+```typescript:src/lib/utils.ts
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+```
+
+6. 修改导入语句中的路径，确保使用正确的大小写：
+
+```typescript:src/components/TranslatePanel.tsx
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+```
+
+7. 修改 next.config.js 以支持 transpilePackages：
+
+```javascript:next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ["@radix-ui/react-separator", "@radix-ui/react-slot"],
+}
+
+module.exports = nextConfig
+```
+
+8. 更新 package.json 中的依赖版本（如果需要）：
+
+```json:package.json
+{
+  "dependencies": {
+    "@radix-ui/react-separator": "^1.0.3",
+    "@radix-ui/react-slot": "^1.0.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.294.0",
+    "tailwind-merge": "^2.1.0",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}
+```
+
+9. 运行安装命令：
+
+```bash
+npm install
+```
+
+这些更改应该能解决当前的导入错误。如果还有其他错误，请告诉我具体的错误信息，我会继续帮你解决。
+
+主要的修复点是：
+1. 安装缺失的依赖
+2. 修正文件名大小写
+3. 确保路径别名配置正确
+4. 添加必要的配置文件
+
+这样应该能解决模块导入的问题。
 
 ---
 

@@ -1,3 +1,20 @@
+# Cursor Translate 教程
+
+## 0. 前言
+
+这是一篇简单的从前端开发人员视角介绍 Cursor 编辑器的教程,主要介绍 Cursor 编辑器的安装和使用,以及如何使用 Cursor 编辑器生成代码,并按照产品需求,完善代码,并优化 UI 界面;
+
+教程文档: [`Cursor Translate 教程`](/cursor-translate教程.md)
+
+教程配套的 git 代码仓库: [`Cursor Translate 翻译应用项目实战`](https://github.com/strawferry/cursor-translate)
+
+AI 交互的记录文档: [`Cursor Composer 记录`](/.specstory/history/composer-交互.md)
+
+
+-----
+
+> 以下是产品文档
+
 # Translate 中英文互译
 
 一个基于 AI 的中英文双向翻译工具，支持段落翻译、语音播报和历史记录功能。

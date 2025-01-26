@@ -12,13 +12,13 @@ AI 交互的记录文档: [`Cursor Composer 记录`](/.specstory/history/compose
 
 [Cursor](https://www.cursor.com/) 是一个目前比较流程很火的 AI Code Editor，它可以帮助你快速生成代码，提高开发效率。
 
-![Cursor 官网介绍图](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250123/17-39-52-JXEi6A.png)
+![Cursor 官网介绍图](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250123/17-39-52-JXEi6A.png)
 
 [Cursor 官网](https://www.cursor.com/) 去下载对应的安装包，安装完成后，打开软件，会提示你注册，注册完成后，就可以开始使用了。
 
 cursor 编辑器是基于 VSCode 开发的，所以基本和 VSCode 界面类似,也可以直接使用 VSCode 的插件。
 
-![09-35-07-reo9nx](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/09-35-07-reo9nx.png)
+![09-35-07-reo9nx](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/09-35-07-reo9nx.png)
 
 ## 2. Cursor Translate 翻译应用项目实战
 
@@ -48,9 +48,9 @@ git init
 3. 等待 AI 生成代码
 4. 点击复制代码,复制到 README.md 文件中
 5. 点击保存,保存到本地
-![Chat 交互模式](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/09-57-54-2G1u4V.png)
+![Chat 交互模式](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/09-57-54-2G1u4V.png)
 
-![保存应用或者回退应用代码](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/10-00-55-GOa3bk.png)
+![保存应用或者回退应用代码](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/10-00-55-GOa3bk.png)
 
 #### 2.3.2 通过 Composer 交互模式,生成代码
 
@@ -59,7 +59,7 @@ git init
 3. 等待 AI 生成代码
 4. 直接生成文件和代码,不需要复制代码
 
-![Composer 交互模式](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/10-15-25-zmvtLM.png)
+![Composer 交互模式](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/10-15-25-zmvtLM.png)
 
 #### 2.3.3 生成 Next.js 项目代码
 
@@ -81,7 +81,7 @@ npx create-next-app@latest translate
 
 ```
 
-![生成 Next.js 项目代码](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/10-31-13-IjEyvR.png)
+![生成 Next.js 项目代码](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/10-31-13-IjEyvR.png)
 
 #### 2.3.4 让 AI 按照产品需求,完善代码
 
@@ -93,28 +93,28 @@ npx create-next-app@latest translate
 6. 继续添加功能,直到所有功能都执行完毕;
 
 
-![按照产品需求,完善代码](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/11-21-03-6Y2X5S.png)
-![第一次生成,初始样式](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/11-25-43-926tLL.png)
+![按照产品需求,完善代码](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/11-21-03-6Y2X5S.png)
+![第一次生成,初始样式](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/11-25-43-926tLL.png)
 
-![4.选取功能点让继续生成](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/11-37-10-mAldxV.png)
+![4.选取功能点让继续生成](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/11-37-10-mAldxV.png)
 
-![继续执行功能生成](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/11-42-33-15UulQ.png)
+![继续执行功能生成](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/11-42-33-15UulQ.png)
 
-![安装依赖](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/11-47-22-qztKIS.png)
+![安装依赖](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/11-47-22-qztKIS.png)
 
-![基本功能实现完毕](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/14-21-29-nyf2no.png)
+![基本功能实现完毕](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/14-21-29-nyf2no.png)
 
 #### 2.3.5 UI 界面优化精细化调整
 
 方法 1:让其使用某个组件库如: shadcn ,并按照 Apple 的设计风格重新设计一下页面,并添加一些交互功能
-![使用组件](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/14-50-18-hj5cGx.png)
+![使用组件](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/14-50-18-hj5cGx.png)
 方法 2: 自己手绘草图或者 UI 设计图,让其调整页面,并添加一些交互功能
-![使用手绘草图,让其修改](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/14-53-18-Xlk5ad.png)
+![使用手绘草图,让其修改](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/14-53-18-Xlk5ad.png)
 
 #### 2.3.6 使用的一些技巧
 
 1. 报错问题修复,直接在命令行中框选后,直接添加到 Chat 或者 Composer 中,让 AI 帮我们修复报错问题;
-![报错问题修复](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/14-36-38-77k4Dp.png)
+![报错问题修复](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/14-36-38-77k4Dp.png)
 
 2. 可以使用 Chat 模式处理一些简单的问题,如: 如何安装依赖,如何运行程序,如何打包程序等,使用 Composer 模式处理一些复杂的问题还有需要更改文件的地方; 模型能力上目前还是 claude 模型比较好,生成后需要我们自己去优化;
 
@@ -164,7 +164,7 @@ npx create-next-app@latest translate
 
 5. 可以多个 Chat 和 Composer 分功能模块,进行 AI 交互代码生成,推荐一个插件 [SpecStory (Cursor Extension)](https://marketplace.visualstudio.com/items?itemName=SpecStory.specstory-vscode),该插件可以导出 Chat 和 Composer 的交互记录;
 
-![Chat 和 Composer 的交互记录](https://raw.githubusercontent.com/strawferry/GSS/master/uPic/20250124/16-42-25-niEHE7.png)
+![Chat 和 Composer 的交互记录](https://cdn.jsdelivr.net/gh/strawferry/GSS@master/uPic/20250124/16-42-25-niEHE7.png)
 
 
 
@@ -173,5 +173,3 @@ npx create-next-app@latest translate
 1. 通过使用 Cursor 编辑器,发现现在 AI 的能力越来越强,可以为我们提效很多;
 2. 目前需要学的是和 AI 沟通技巧,让 AI 按照我们的需求生成代码,如何让 AI 按照我们的需求优化代码;
 3. 做新产品和小工具通过 Cursor 是真的非常快,不过还是需要一定的产品和代码基础,不然容易出现 bug 等边界问题;
-
-
